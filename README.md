@@ -13,11 +13,11 @@ In an effort to fully automate the deployment flow of a WebApp, i've
 * [Docker Hub](https://hub.docker.com/)
 * [AWS S3](https://aws.amazon.com/s3/)
 
-## Build vs production container
+## Build vs. production container
 
-An image that contains Node.js, npm packages, etc can be quite big. That 
-for just hosting static content ... you don't won't a container of 
-**1GB** in production for just hosting static content. 
+An image that contains Node.js, npm packages, etc can be quite big. You 
+don't won't a container of **1GB** in production for just hosting 
+static content. 
 
 The recipe contains 2 Docker images:
 
@@ -34,21 +34,23 @@ Basic image sizes:
 | build      | 697.2 MB |
 | production | 55.67 MB |
 
+*Notice the size of the build container*
+
 ## The solution
 
 The development image creates an unique *artifact* (a tar.giz file) 
-and uploads it S3. The production image downloads & extracts the 
+and uploads it to S3. The production image downloads and extracts the 
 artifact in the Nginx data folder.
 
 ### Build image
 
-The [development image](Dockerfile) installs all the npm packages and 
+The [build image](Dockerfile) installs all the npm packages and 
 builds the WebApp. The important part of this this image is that it 
 contains an 
 [entrypoint](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#/entrypoint) 
 to create a *tar.gz* file of the compiled WebApp and uploads it to S3. 
 
-The entrypoint:
+Entrypoint snippet:
 ```bash
 case "$1" in
     bash)
@@ -84,7 +86,7 @@ RUN /usr/local/bin/docker-entrypoint.sh create
 RUN /usr/local/bin/docker-entrypoint.sh upload docker-tmp-release
 ```
 
-This will create and upload the artifact to an S3 bucket 
+This will create and upload the artifact to a S3 bucket 
 *docker-tmp-release* (replace this with a bucket name of your own 
 account). 
 
@@ -97,7 +99,7 @@ the *master branch*.
 ### Production image
 
 The [production image](DockerfileNginx) is being build with the 
-automated builds of docker hub as well.
+automated builds feature of docker hub as well.
 
 Snippet that downloads and extracts the artifact:
 ```bash
