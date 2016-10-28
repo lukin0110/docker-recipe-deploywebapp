@@ -14,6 +14,10 @@ In an effort to fully automate the deployment flow of a WebApp, i've
 * [Docker Hub](https://hub.docker.com/)
 * [Docker Cloud](https://cloud.docker.com)
 
+This recipe eliminates all manual steps to build and deploy WebApps. The 
+ only thing you need to do is to push to your *master branch*, a few 
+ minutes to app will be deployed.
+
 ## Build vs. production container
 
 An image that contains Node.js, npm packages, etc can be quite big. You 
