@@ -2,9 +2,9 @@
 
 Modern WebApps, build with 
 [React](https://facebook.github.io/react/) or 
-[Angular2](https://angular.io/) for example, are setup with Node.js and 
-a lot of npm packages. Those apps require a build step before you deploy 
-it on a webserver.
+[Angular2](https://angular.io/) for example, are setup with Node.js, 
+Less or Sass and a lot of npm packages. Those apps require a build step 
+before you deploy it on a webserver.
 
 In an effort to fully automate the deployment flow of a WebApp, i've 
  hacked this recipe together with:
