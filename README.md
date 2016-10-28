@@ -2,9 +2,9 @@
 
 Modern WebApps, build with 
 [React](https://facebook.github.io/react/) or 
-[Angular2](https://angular.io/) for example, are setup with Node.js & a 
-lot of npm packages. Those apps require a build step before you deploy 
-it on a server.
+[Angular2](https://angular.io/) for example, are setup with Node.js and 
+a lot of npm packages. Those apps require a build step before you deploy 
+it on a webserver.
 
 In an effort to fully automate the deployment flow of a WebApp, i've 
  hacked this recipe together with:
@@ -15,16 +15,17 @@ In an effort to fully automate the deployment flow of a WebApp, i've
 
 ## Build vs production container
 
-A image that contains Node.js, npm packages, etc can be quite big, for
-just hosting static content ... you don't won't a container of 1GB in 
-production for just hosting static content. 
+An image that contains Node.js, npm packages, etc can be quite big. That 
+for just hosting static content ... you don't won't a container of 
+**1GB** in production for just hosting static content. 
 
-I've create 2 Docker images:
+The recipe contains 2 Docker images:
 
-* [Build image](Dockerfile): image contains all dependencies to develop 
+* A [build image](Dockerfile): image contains all dependencies to develop 
 & build a WebApp 
-* [Production image](DockerfileNginx): image simple contains the 
-[Nginx](https://nginx.org/) webserver, based on Alpine
+* A [production image](DockerfileNginx): simple image, based on 
+[Linux Alpine](https://alpinelinux.org/), that contains the 
+[Nginx](https://nginx.org/) webserver
     
 Basic image sizes:
 
@@ -35,16 +36,17 @@ Basic image sizes:
 
 ## The solution
 
-The development image creates an unique artifact & uploads it S3. 
-The production image downloads & extracts the artifact in the Nginx 
-data folder.
+The development image creates an unique *artifact* (a tar.giz file) 
+and uploads it S3. The production image downloads & extracts the 
+artifact in the Nginx data folder.
 
 ### Build image
 
 The [development image](Dockerfile) installs all the npm packages and 
-builds the WebApp. They thing of this image is that it contains an 
-entrypoint to create a *tar.gz* artifact file of the compiled WebApp & 
-upload that artifact to S3. 
+builds the WebApp. The important part of this this image is that it 
+contains an 
+[entrypoint](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#/entrypoint) 
+to create a *tar.gz* file of the compiled WebApp and uploads it to S3. 
 
 The entrypoint:
 ```bash
@@ -53,21 +55,22 @@ case "$1" in
         /bin/bash "${@:2}"
     ;;
     create)
-        # The create script creates a tar.gz file
         commit_hash=$( cat /commit_hash.txt | cut -c -8)
         tar -zcvf app_$commit_hash.tar.gz dist
     ;;
     upload)
-         # The release script uploads the .tar.gz file to S3
-         # Create the bucket if it doesn't exist
         commit_hash=$( cat /commit_hash.txt | cut -c -8)
+        # Create the bucket if it doesn't exist
         aws s3api create-bucket --bucket ${@:2}
+
+        # Make the tarfile public readable. This avoids authentication problems in the DockerfileNginx file to download
+        # the file. Otherwise the AWS CLI has to be installed and the goal is to keep that image small.
+        #
+        # It's not an issue to make the artifact public, because you can see the sourcecode anyway in the browser
         aws s3 cp app_$commit_hash.tar.gz s3://${@:2}/ --acl public-read
     ;;
-    *)
-        show_help
-    ;;
 esac
+
 ```
 
 The entrypoint uses the latest commit hash, which is added by the 
@@ -81,21 +84,22 @@ RUN /usr/local/bin/docker-entrypoint.sh create
 RUN /usr/local/bin/docker-entrypoint.sh upload docker-tmp-release
 ```
 
-This will upload the artifact to an S3 bucket *docker-tmp-release* 
-(replace this with a bucket name of your own account). 
+This will create and upload the artifact to an S3 bucket 
+*docker-tmp-release* (replace this with a bucket name of your own 
+account). 
 
 It's kind of ugly to upload a file during the build process of the 
 docker image. But this allows you to use the 
 [automated builds](https://docs.docker.com/docker-hub/builds/) 
-feature of docker hub to build the artifact when you push to the 
-*git master*.
+feature of docker hub to build and upload the artifact when you push to 
+the *master branch*.
 
 ### Production image
 
 The [production image](DockerfileNginx) is being build with the 
 automated builds of docker hub as well.
 
-Snippet that downloads & extracts to artifact:
+Snippet that downloads and extracts the artifact:
 ```bash
 RUN mkdir -p /var/www \
     && cd /var/www \
@@ -119,16 +123,15 @@ create automated builds.
 For the production image you need to switch off the 
 *When active, builds will happen automatically on pushes* option. 
 
-Add the production images as repository link. When the production image
-is updated it will automatically trigger a rebuild of this Automated 
-Build.
+Add the [build image](Dockerfile) as repository link to the 
+[production image](DockerfileNginx). When the build image is updated it 
+will automatically trigger a rebuild of this Automated Build.
 
 ## S3 Bucket
 
-In the [credentials file](.aws/credentials) you need to add your AWS 
-credentials that have access to S3.
+Add your AWS credentials in the [credentials file](.aws/credentials). 
+Make sure they have access to S3.
 
 In both containers you need to replace the bucket name 
 *docker-tmp-release* to another bucket name. All bucket names on S3 are 
 unique.
-  
