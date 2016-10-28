@@ -1,0 +1,17 @@
+version: '2'
+services:
+  # Node.js build & development container for the WebApp
+  app:
+      build:
+        context: .
+        dockerfile: Dockerfile
+
+  # Nginx container
+  nginx:
+      build:
+        context: .
+        dockerfile: DockerfileNginx
+      ports:
+        - 80:80
+      depends_on:
+        - app
