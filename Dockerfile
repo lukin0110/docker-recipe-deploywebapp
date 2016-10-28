@@ -3,7 +3,8 @@
 #
 FROM node:7.0.0
 
-# Install AWS CLI & copy AWS Config for the AWS CLI
+# Install python & the AWS CLI
+# The AWS CLI relies on Python
 # https://aws.amazon.com/cli/
 RUN apt-get update &&  \
     apt-get install python python-setuptools --yes && \
@@ -12,7 +13,7 @@ RUN apt-get update &&  \
     mkdir -p /usr/src/app && \
     rm -rf /var/lib/apt/lists/*
 
-# Add AWS credentials
+# Copy AWS credentials
 COPY deployment/.aws /root/.aws
 
 # Add docker-entrypoint.sh
@@ -30,10 +31,11 @@ RUN npm install --no-optional
 COPY app /usr/src/app
 
 # Build the actual app
-# Sample build. You should replace this with a build command of your webapp stack, e.g: React, Angular2, ...
+# Sample build. You should replace this with a build command of your WebApp stack, e.g: React, Angular2, ...
 RUN	npm run build
 
 # Take the latest commit hash as unique version
+# Is used by the docker-entrypoint.sh to build artifacts
 COPY .git/refs/heads/master /commit_hash.txt
 
 # Create & upload

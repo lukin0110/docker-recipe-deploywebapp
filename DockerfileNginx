@@ -1,7 +1,6 @@
 #
 # Hosts the static content
 #
-# VERSION               0.0.1
 FROM nginx:1.11.5-alpine
 
 EXPOSE 80
