@@ -10,8 +10,9 @@ In an effort to fully automate the deployment flow of a WebApp, i've
  hacked this recipe together with:
   
 * [Docker](https://www.docker.com/)
-* [Docker Hub](https://hub.docker.com/)
 * [AWS S3](https://aws.amazon.com/s3/)
+* [Docker Hub](https://hub.docker.com/)
+* [Docker Cloud](https://cloud.docker.com)
 
 ## Build vs. production container
 
@@ -128,6 +129,25 @@ For the production image you need to switch off the
 Add the [build image](Dockerfile) as repository link to the 
 [production image](DockerfileNginx). When the build image is updated it 
 will automatically trigger a rebuild of this Automated Build.
+
+### Docker cloud
+
+Docker cloud can be configured to automatically redeploy a container 
+once an image has been updated. Set `autoredeploy: true`
+
+Example stack file:
+```yaml
+app:
+  image: lukin0110/webapp:latest
+  autoredeploy: true
+  ports:
+    - "80:80"
+  privileged: false
+  restart: always
+  target_num_containers: 1
+  deployment_strategy: emptiest_node
+```
+
 
 ## S3 Bucket
 
